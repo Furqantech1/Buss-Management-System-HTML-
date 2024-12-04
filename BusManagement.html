@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            background-color: rebeccapurple;
+            color: white;
+            padding: 15px;
+            margin: 0;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        input, select {
+            padding: 10px;
+            width: 200px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: rebeccapurple;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #673ab7;
+        }
+        .hidden {
+            display: none;
+        }
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 80%;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+        thead {
+            background-color: rebeccapurple;
+            color: white;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e8f1ff;
+        }
+        td {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bus Management System</h1>
+    <!-- Registration Section -->
+    <div id="registerContainer" class="container">
+        <h2>Register</h2>
+        <div class="form-group">
+            <input type="text" id="regName" placeholder="Enter Name" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="regUsername" placeholder="Enter Username (8 characters, starts with a letter)" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="regPassword" placeholder="Enter Password" required>
+        </div>
+        <button onclick="register()">Register</button>
+    </div>
+    <!-- Login Section -->
+    <div id="loginContainer" class="container hidden">
+        <h2>Login</h2>
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Enter Username" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="password" placeholder="Enter Password" required>
+        </div>
+        <button onclick="login()">Login</button>
+    </div>
+    <!-- Bus Entry Form -->
+    <div id="entryContainer" class="container hidden">
+        <h2>Bus Entry Form</h2>
+        <div class="form-group">
+            <input type="text" id="busNumber" placeholder="Enter Bus Number" required>
+        </div>
+        <div class="form-group">
+            <input type="text" id="busRoute" placeholder="Enter Bus Route" required>
+        </div>
+        <div class="form-group">
+            <select id="busAvailability">
+                <option value="Available">Available</option>
+                <option value="Not Available">Not Available</option>
+            </select>
+        </div>
+        <button onclick="submitBusDetails()">Submit</button>
+    </div>
+    <!-- View Bus Details -->
+    <div id="viewContainer" class="container hidden">
+        <h2>View Bus Details</h2>
+        <button onclick="toggleBusDetails()">Show/Hide Bus Details</button>
+        <button onclick="exportToExcel()">Export to Excel</button>
+        <table id="busDetailsTable" class="hidden">
+            <thead>
+                <tr>
+                    <th>Bus Number</th>
+                    <th>Bus Route</th>
+                    <th>Availability</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Bus details will be dynamically added here -->
+            </tbody>
+        </table>
+        <button onclick="logout()">Logout</button>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        const users = [];
+        const busDetails = [];
+        let loggedInUser = null;
+
+        function isValidUsername(username) {
+            const regex = /^[a-zA-Z][a-zA-Z0-9]{7}$/;
+            return regex.test(username);
+        }
+
+        function register() {
+            const name = document.getElementById('regName').value;
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+
+            if (!name || !username || !password) {
+                alert("Please fill out all fields!");
+                return;
+            }
+
+            if (!isValidUsername(username)) {
+                alert("Invalid username! Username must be 8 characters, start with a letter, and contain letters and numbers.");
+                return;
+            }
+
+            if (users.some(user => user.username === username)) {
+                alert("Username already exists! Please choose a different username.");
+                return;
+            }
+
+            users.push({ name, username, password });
+            alert("Registration successful!");
+
+            document.getElementById('registerContainer').classList.add('hidden');
+            document.getElementById('loginContainer').classList.remove('hidden');
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const user = users.find(user => user.username === username && user.password === password);
+            if (user) {
+                loggedInUser = user;
+                alert("Login successful!");
+
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('entryContainer').classList.remove('hidden');
+                document.getElementById('viewContainer').classList.remove('hidden');
+            } else {
+                alert("Invalid username or password!");
+            }
+        }
+
+        function logout() {
+            loggedInUser = null;
+            alert("Logged out successfully!");
+            document.getElementById('entryContainer').classList.add('hidden');
+            document.getElementById('viewContainer').classList.add('hidden');
+            document.getElementById('loginContainer').classList.remove('hidden');
+        }
+
+        function submitBusDetails() {
+            const busNumber = document.getElementById('busNumber').value;
+            const busRoute = document.getElementById('busRoute').value;
+            const busAvailability = document.getElementById('busAvailability').value;
+
+            if (busNumber && busRoute) {
+                busDetails.push({
+                    name: loggedInUser.name,
+                    username: loggedInUser.username,
+                    number: busNumber,
+                    route: busRoute,
+                    availability: busAvailability
+                });
+                alert("Bus details added successfully!");
+                document.getElementById('busNumber').value = '';
+                document.getElementById('busRoute').value = '';
+            } else {
+                alert("Please fill out all fields!");
+            }
+        }
+
+        function toggleBusDetails() {
+            const table = document.getElementById('busDetailsTable');
+            const tbody = table.querySelector('tbody');
+            table.classList.toggle('hidden');
+
+            tbody.innerHTML = '';
+            if (busDetails.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="3">No bus details available.</td>`;
+                tbody.appendChild(row);
+            } else {
+                busDetails.forEach(bus => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${bus.number}</td>
+                        <td>${bus.route}</td>
+                        <td>${bus.availability}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        function exportToExcel() {
+            if (busDetails.length === 0) {
+                alert("No data to export!");
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(busDetails);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Bus Details");
+            XLSX.writeFile(workbook, "BusDetails.xlsx");
+        }
+    </script>
+</body>
+</html>
